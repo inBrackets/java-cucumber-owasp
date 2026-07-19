@@ -1,0 +1,17 @@
+# Maven
+target/
+
+# Compiled class files
+*.class
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.iml

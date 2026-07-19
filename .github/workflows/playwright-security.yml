@@ -1,0 +1,133 @@
+name: Playwright Security Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Start early to overlap with dependency installation
+      - name: Start Juice Shop
+        run: docker compose up -d
+
+      - name: Download Allure history
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          name: allure-history
+          path: allure-history
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache Playwright browser binaries
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pom.xml') }}
+
+      - name: Download Playwright browser binaries
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install chromium"
+
+      - name: Install Playwright OS dependencies
+        run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps chromium"
+
+      - name: Wait for Juice Shop to be healthy
+        run: |
+          echo "Waiting for Juice Shop on port 3000..."
+          for i in $(seq 1 12); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "Juice Shop is ready after ${i}0 seconds"
+              exit 0
+            fi
+            echo "Attempt $i/12 — retrying in 10s"
+            sleep 10
+          done
+          echo "ERROR: Juice Shop did not become healthy within 120 seconds"
+          docker compose logs juice-shop
+          exit 1
+
+      - name: Run security tests
+        # continue-on-error preserves reporting when vulnerabilities are detected
+        continue-on-error: true
+        run: mvn test
+
+      - name: Restore Allure history for trend graphs
+        run: |
+          if [ -d allure-history ]; then
+            mkdir -p target/allure-results/history
+            cp -r allure-history/. target/allure-results/history/
+            echo "Allure history restored"
+          else
+            echo "No previous history found — first run"
+          fi
+
+      - name: Generate Allure report
+        run: mvn allure:report
+
+      - name: Save Allure history artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-history
+          path: target/allure-report/history
+          retention-days: 30
+
+      - name: Prepare GitHub Pages deployment bundle
+        run: |
+          mkdir -p pages-deploy/allure
+          cp -r target/allure-report/. pages-deploy/allure/
+          cat > pages-deploy/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="refresh" content="0; url=allure/index.html">
+            <title>Security Test Report</title>
+          </head>
+          <body>
+            <p>Redirecting to <a href="allure/index.html">Allure Security Report</a>…</p>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-deploy
+
+  deploy:
+    needs: test
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

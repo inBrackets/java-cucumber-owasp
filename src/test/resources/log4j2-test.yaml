@@ -1,0 +1,16 @@
+Configuration:
+  status: warn
+  Appenders:
+    Console:
+      name: CONSOLE
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg%n"
+  Loggers:
+    Logger:
+      - name: com.owasp
+        level: debug
+    Root:
+      level: info
+      AppenderRef:
+        - ref: CONSOLE
