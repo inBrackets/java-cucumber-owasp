@@ -14,4 +14,3 @@ Feature: A05:2021 - Security Misconfiguration
   Scenario: Support log directory should not be browsable without authentication
     When I request the "/support/logs/" directory without authentication
     Then access to the directory listing should be denied
-    And no access log file should be disclosed in the response

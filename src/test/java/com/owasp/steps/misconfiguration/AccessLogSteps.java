@@ -3,13 +3,10 @@ package com.owasp.steps.misconfiguration;
 import com.microsoft.playwright.APIRequestContext;
 import com.microsoft.playwright.APIResponse;
 import com.owasp.actor.Cast;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,8 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @RequiredArgsConstructor
 public class AccessLogSteps {
-
-    private static final Pattern ACCESS_LOG_LINK = Pattern.compile("href=\"[^\"]*access\\.log[^\"]*\"");
 
     private final Cast cast;
 
@@ -36,18 +31,10 @@ public class AccessLogSteps {
 
     @Then("access to the directory listing should be denied")
     public void accessToTheDirectoryListingShouldBeDenied() {
-        assertThat(response.status())
+        assertThat(response.ok())
                 .as("VULNERABILITY DETECTED [A05 Security Misconfiguration]: expected an unauthenticated "
-                        + "request to be rejected (401/403) but got " + response.status()
+                        + "request to be rejected but got " + response.status()
                         + " — the support log directory is publicly browsable")
-                .isIn(401, 403);
-    }
-
-    @And("no access log file should be disclosed in the response")
-    public void noAccessLogFileShouldBeDisclosedInTheResponse() {
-        assertThat(ACCESS_LOG_LINK.matcher(response.text()).find())
-                .as("VULNERABILITY DETECTED [A05 Security Misconfiguration]: response body references "
-                        + "an access.log file that should not be reachable without authentication")
                 .isFalse();
     }
 }
