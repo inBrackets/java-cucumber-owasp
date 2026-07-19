@@ -37,12 +37,13 @@ public class LoginPage extends BasePage {
         loginButton.click();
     }
 
-    /** Convenience: fills credentials and submits in one call. */
+    /** Convenience: fills credentials, submits, and waits for the resulting navigation/XHR to settle. */
     public void loginWith(String email, String password) {
         log.debug("Attempting login with email: {}", email);
         fillEmail(email);
         fillPassword(password);
         submit();
+        waitForPageLoad();
     }
 
     public boolean isOnLoginPage() {
