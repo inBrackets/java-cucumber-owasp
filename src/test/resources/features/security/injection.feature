@@ -10,9 +10,15 @@ Feature: A03:2021 - Injection
   Background:
     Given the application is accessible at the base URL
 
-  @sql-injection @login-bypass @ui
-  Scenario: SQL injection login bypass should be blocked
+  @sql-injection @login-bypass @ui @TmsLink=_log_in_with_the_administrators_user_account
+  Scenario Outline: SQL injection login bypass should be blocked
     Given I am on the login page
-    When I attempt to login with email "' OR 1=1--" and password "anything"
+    When I attempt to login with email "<email>" and password "<password>"
     Then I should not be authenticated
     And I should see a login error message
+
+    Examples:
+      | email                | password |
+      | anything             | anything |
+      | ' OR 1=1--           | anything |
+      | admin@juice-sh.op'-- | anything |

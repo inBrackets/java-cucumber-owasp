@@ -2,6 +2,7 @@ package com.owasp.pages;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -17,7 +18,7 @@ public class LoginPage extends BasePage {
         this.emailInput = page.locator("#email");
         this.passwordInput = page.locator("#password");
         this.loginButton = page.locator("#loginButton");
-        this.formError = page.locator("mat-error");
+        this.formError = page.locator("div.error");
     }
 
     @Override
@@ -50,8 +51,14 @@ public class LoginPage extends BasePage {
         return getCurrentUrl().contains("/#/login");
     }
 
+    /** Waits for the error banner to render — it can appear briefly after the login request settles. */
     public boolean hasFormError() {
-        return formError.count() > 0;
+        try {
+            formError.waitFor();
+            return true;
+        } catch (PlaywrightException e) {
+            return false;
+        }
     }
 
     public String getFormError() {
