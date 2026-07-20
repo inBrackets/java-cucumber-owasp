@@ -14,3 +14,13 @@ Feature: A01:2021 - Broken Access Control
   Scenario: Confidential acquisitions document should not be accessible without authentication
     When I request the "/ftp/acquisitions.md" file without authentication
     Then access to the confidential document should be denied
+
+  # Positive-path control: complements the denial above by confirming a legitimately
+  # authenticated administrator can still reach the restricted section.
+  @administration-access @ui @TmsLink=_access_the_administration_section_of_the_store
+  Scenario: Administrator should be able to access the administration section
+    Given I am on the login page
+    When I attempt to login with email "admin@juice-sh.op" and password "admin123"
+    Then I should be authenticated
+    When I navigate to the administration section
+    Then I should see the administration page

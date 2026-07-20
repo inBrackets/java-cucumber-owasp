@@ -3,6 +3,7 @@ package com.owasp.actor;
 import com.microsoft.playwright.APIRequestContext;
 import com.owasp.components.NavbarComponent;
 import com.owasp.context.TestContext;
+import com.owasp.pages.AdministrationPage;
 import com.owasp.pages.LoginPage;
 import com.owasp.pages.MainPage;
 import lombok.Getter;
@@ -29,6 +30,7 @@ public class Actor {
     private LoginPage loginPage;
     private MainPage mainPage;
     private NavbarComponent navbar;
+    private AdministrationPage administrationPage;
 
     public LoginPage loginPage() {
         if (loginPage == null) {
@@ -49,6 +51,13 @@ public class Actor {
             navbar = new NavbarComponent(testContext.getPage());
         }
         return navbar;
+    }
+
+    public AdministrationPage administrationPage() {
+        if (administrationPage == null) {
+            administrationPage = new AdministrationPage(testContext.getPage());
+        }
+        return administrationPage;
     }
 
     /** Entry point for scenarios that hit the backend directly, bypassing the UI. */
