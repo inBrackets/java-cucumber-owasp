@@ -82,27 +82,26 @@ jobs:
         continue-on-error: true
         run: mvn test
 
-      - name: Restore Allure history for trend graphs
+      - name: Update Allure history
+        # Allure 3 tracks history as a single accumulating history.jsonl (one line per run),
+        # not the per-run "history/" folder Allure 2 used. `allure history` appends this run's
+        # results onto the file restored above, or starts a fresh one on the first-ever run.
         run: |
-          if [ -d allure-history ]; then
-            mkdir -p target/allure-results/history
-            cp -r allure-history/. target/allure-results/history/
-            echo "Allure history restored"
-          else
-            echo "No previous history found — first run"
-          fi
+          mkdir -p allure-history
+          npx --yes allure@3.14.3 history target/allure-results --history-path allure-history/history.jsonl
 
       - name: Generate Allure report
         # Allure Report 3 (Node-based) instead of the Java allure-maven plugin — its default
         # report renders Playwright trace attachments as an embedded, interactive Trace Viewer
-        # (via trace.playwright.dev) instead of a plain zip download.
-        run: npx --yes allure@3.14.3 generate target/allure-results --output target/allure-report --report-name "Security Test Report"
+        # (via trace.playwright.dev) instead of a plain zip download. `--history-path` feeds in
+        # the accumulated history.jsonl so each test's History tab shows its trend across runs.
+        run: npx --yes allure@3.14.3 awesome target/allure-results --history-path allure-history/history.jsonl --output target/allure-report --report-name "Security Test Report"
 
       - name: Save Allure history artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-history
-          path: target/allure-report/history
+          path: allure-history/history.jsonl
           retention-days: 30
 
       - name: Prepare GitHub Pages deployment bundle
