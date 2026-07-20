@@ -32,9 +32,10 @@ public class ConfidentialDocumentSteps {
     @Then("access to the confidential document should be denied")
     public void accessToTheConfidentialDocumentShouldBeDenied() {
         assertThat(response.ok())
-                .as("VULNERABILITY DETECTED [A01 Broken Access Control]: expected an unauthenticated "
-                        + "request to be rejected but got " + response.status()
-                        + " — the confidential document is publicly readable")
+                .as("""
+                                VULNERABILITY DETECTED [A01 Broken Access Control]: expected an unauthenticated \
+                                request to be rejected but got %s — the confidential document is publicly readable""",
+                        response.status())
                 .isFalse();
     }
 }

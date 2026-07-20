@@ -32,9 +32,10 @@ public class AccessLogSteps {
     @Then("access to the directory listing should be denied")
     public void accessToTheDirectoryListingShouldBeDenied() {
         assertThat(response.ok())
-                .as("VULNERABILITY DETECTED [A05 Security Misconfiguration]: expected an unauthenticated "
-                        + "request to be rejected but got " + response.status()
-                        + " — the support log directory is publicly browsable")
+                .as("""
+                                VULNERABILITY DETECTED [A05 Security Misconfiguration]: expected an unauthenticated \
+                                request to be rejected but got %s — the support log directory is publicly browsable""",
+                        response.status())
                 .isFalse();
     }
 }

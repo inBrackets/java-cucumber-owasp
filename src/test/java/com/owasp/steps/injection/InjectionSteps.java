@@ -45,8 +45,9 @@ public class InjectionSteps {
     @Then("I should not be authenticated")
     public void iShouldNotBeAuthenticated() {
         assertThat(cast.actor().mainPage().isOnMainPage())
-                .as("VULNERABILITY DETECTED [A03 SQL Injection]: Authentication bypass succeeded. "
-                        + "The application should have rejected the payload but redirected to the main page.")
+                .as("""
+                        VULNERABILITY DETECTED [A03 SQL Injection]: Authentication bypass succeeded. \
+                        The application should have rejected the payload but redirected to the main page.""")
                 .isFalse();
     }
 
