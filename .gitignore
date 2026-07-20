@@ -8,6 +8,9 @@ target/
 hs_err_pid*.log
 replay_pid*.log
 
+# Local Ollama model data (bind-mounted for docker-compose, cached in CI)
+.ollama-data/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -15,3 +18,6 @@ Thumbs.db
 # IDE
 .vscode/
 *.iml
+
+.idea/
+.allure/

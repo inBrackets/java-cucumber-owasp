@@ -24,3 +24,13 @@ Feature: A01:2021 - Broken Access Control
     Then I should be authenticated
     When I navigate to the administration section
     Then I should see the administration page
+
+  # The chatbot's tool-call debug view is meant for admins only, but that check is only
+  # enforced client-side via the "show_tool_calls" cookie — the server includes the data
+  # regardless of who asks.
+  @ai-debugging @api @TmsLink=_reveal_some_behind_the_scenes_information_on_the_chatbot_as_a_non_admin_user
+  Scenario: Chatbot tool-call debugging information should not be exposed to a non-admin user
+    Given I have registered a new customer account
+    And I have set the "show_tool_calls" debug cookie to "true"
+    When I ask the chatbot "Do you have any apples in stock?"
+    Then the chatbot response should not reveal tool call debugging information

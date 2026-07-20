@@ -25,6 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Avoids re-pulling the ~1.3GB chatbot model on every run
+      - name: Cache Ollama model data
+        uses: actions/cache@v4
+        with:
+          path: .ollama-data
+          key: ${{ runner.os }}-ollama-llama3.2-1b
+
       # Start early to overlap with dependency installation
       - name: Start Juice Shop
         run: docker compose up -d
@@ -63,18 +70,21 @@ jobs:
         run: mvn exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps chromium"
 
       - name: Wait for Juice Shop to be healthy
+        # Juice Shop's container won't even start until the ollama service reports healthy
+        # (depends_on: condition: service_healthy), so this wait also covers a cold-cache
+        # Ollama model pull (~1.3GB) — generous on a cache miss, fast once cached.
         run: |
           echo "Waiting for Juice Shop on port 3000..."
-          for i in $(seq 1 12); do
+          for i in $(seq 1 30); do
             if curl -sf http://localhost:3000 > /dev/null; then
               echo "Juice Shop is ready after ${i}0 seconds"
               exit 0
             fi
-            echo "Attempt $i/12 — retrying in 10s"
+            echo "Attempt $i/30 — retrying in 10s"
             sleep 10
           done
-          echo "ERROR: Juice Shop did not become healthy within 120 seconds"
-          docker compose logs juice-shop
+          echo "ERROR: Juice Shop did not become healthy within 300 seconds"
+          docker compose logs ollama juice-shop
           exit 1
 
       - name: Run security tests

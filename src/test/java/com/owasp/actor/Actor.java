@@ -1,13 +1,17 @@
 package com.owasp.actor;
 
 import com.microsoft.playwright.APIRequestContext;
+import com.microsoft.playwright.options.Cookie;
 import com.owasp.components.NavbarComponent;
+import com.owasp.config.FrameworkConfig;
 import com.owasp.context.TestContext;
 import com.owasp.pages.AdministrationPage;
 import com.owasp.pages.LoginPage;
 import com.owasp.pages.MainPage;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 /**
  * A named actor driving the system under test. Steps go through an actor to reach page
@@ -63,6 +67,15 @@ public class Actor {
     /** Entry point for scenarios that hit the backend directly, bypassing the UI. */
     public APIRequestContext backend() {
         return testContext.getBrowserContext().request();
+    }
+
+    /**
+     * Sets a raw browser cookie — used by scenarios that manipulate a client-side security
+     * control directly (e.g. a feature flag the app trusts without server-side verification).
+     */
+    public void setCookie(String name, String value) {
+        testContext.getBrowserContext().addCookies(
+                List.of(new Cookie(name, value).setUrl(FrameworkConfig.getInstance().getBaseUrl())));
     }
 
     @Override
